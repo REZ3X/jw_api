@@ -105,7 +105,12 @@ fn build_cors(config: &Config) -> CorsLayer {
             Method::PATCH,
             Method::OPTIONS,
         ])
-        .allow_headers(tower_http::cors::Any)
+        .allow_headers([
+            axum::http::header::AUTHORIZATION,
+            axum::http::header::CONTENT_TYPE,
+            axum::http::header::ACCEPT,
+            axum::http::header::HeaderName::from_static("x-api-key"),
+        ])
         .allow_credentials(true)
 }
 
