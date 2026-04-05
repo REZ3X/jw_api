@@ -171,9 +171,42 @@ Request body: `{ "vote_type": "up" | "down" }`
 
 Chat types:
 - **general** — Conversational civic engagement assistant
-- **agentic** — Tool-calling mode with access to platform data (posts, stats, trends)
+- **agentic** — Role-aware tool-calling mode with access to platform data
 
 All chat messages are encrypted at rest with per-user derived keys (AES-256-GCM + HKDF).
+
+#### Agentic Tools
+
+Tools available depend on the user's role:
+
+**Shared (all roles)**
+
+| Tool | Params | Description |
+|------|--------|-------------|
+| `GET_TRENDING_TAGS` | — | Trending hashtags |
+| `GET_PLATFORM_STATS` | — | Platform-wide statistics |
+| `GET_DEPARTMENT_STATS` | — | Per-department breakdown |
+| `SEARCH_POSTS` | department?, status?, tag?, search?, limit? | Search public posts |
+
+**Citizen (basic / dev)**
+
+| Tool | Params | Description |
+|------|--------|-------------|
+| `GET_MY_POSTS` | status?, limit? | Own submitted reports |
+| `GET_MY_UNRESPONDED_POSTS` | department? | Reports not yet resolved |
+| `CREATE_POST_DRAFT` | caption, location, department?, is_private? | Draft a report via chat (validates required fields, asks user for missing ones) |
+
+**Government roles**
+
+| Tool | Params | Description |
+|------|--------|-------------|
+| `GET_DEPT_QUEUE` | status?, limit? | Reports awaiting action in your department |
+| `GET_DEPT_TODAY_STATS` | — | Today's report counts + backlog |
+| `GET_DEPT_RESPONSE_HISTORY` | limit? | Your recent status changes |
+| `SEARCH_DEPT_POSTS` | status?, search?, tag?, days?, limit? | Search within your department |
+| `GET_DEPT_TRENDS` | days? | Daily report volume + top tags for your department |
+
+Gov accounts cannot use citizen tools (`GET_MY_POSTS`, `CREATE_POST_DRAFT`).
 
 ### Analytics
 

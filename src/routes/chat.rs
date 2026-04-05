@@ -58,7 +58,7 @@ async fn send_message(State(state): State<AppState>, auth: VerifiedUser, Path(id
     if req.message.trim().is_empty() { return Err(AppError::ValidationError("Message cannot be empty".into())); }
     let chat = ChatService::get_chat(&state.db, &auth.user.id, &id).await?;
     let (user_msg, ai_msg) = match chat.chat_type.as_str() {
-        "agentic" => AgentService::process_message(&state.db, &state.crypto, &state.gemini, &auth.user.id, &auth.user.name, &id, &auth.user.encryption_salt, &req).await?,
+        "agentic" => AgentService::process_message(&state.db, &state.crypto, &state.gemini, &auth.user.id, &auth.user.name, &auth.user.role, &id, &auth.user.encryption_salt, &req).await?,
         _ => ChatService::send_general_message(&state.db, &state.crypto, &state.gemini, &auth.user.id, &auth.user.name, &id, &auth.user.encryption_salt, &req).await?,
     };
     log_activity(&state.db, &auth.user.id, "create", "chat", "chat_message", Some(&id), Some(&format!("type: {}", chat.chat_type)), None).await;
