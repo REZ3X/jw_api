@@ -18,6 +18,21 @@ impl UserService {
         Ok(PublicUserResponse::from(&user))
     }
 
+    /// Search users by name or username (case-insensitive, partial match).
+    pub async fn search_users(pool: &MySqlPool, query: &str, limit: i64) -> Result<Vec<PublicUserResponse>> {
+        let pattern = format!("%{}%", query);
+        let rows: Vec<UserRow> = sqlx::query_as(
+            "SELECT * FROM users WHERE (name LIKE ? OR username LIKE ?) ORDER BY name ASC LIMIT ?"
+        )
+        .bind(&pattern)
+        .bind(&pattern)
+        .bind(limit)
+        .fetch_all(pool)
+        .await
+        .map_err(AppError::DatabaseError)?;
+        Ok(rows.iter().map(PublicUserResponse::from).collect())
+    }
+
     pub async fn set_custom_avatar(pool: &MySqlPool, user_id: &str, url: &str) -> Result<()> {
         sqlx::query("UPDATE users SET custom_avatar_url = ?, use_custom_avatar = TRUE, updated_at = NOW() WHERE id = ?")
             .bind(url).bind(user_id).execute(pool).await.map_err(AppError::DatabaseError)?;

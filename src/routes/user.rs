@@ -1,4 +1,5 @@
-use axum::{extract::{Path, State, Multipart}, routing::{get, post, delete}, Json, Router};
+use axum::{extract::{Path, Query, State, Multipart}, routing::{get, post, delete}, Json, Router};
+use serde::Deserialize;
 use serde_json::{json, Value};
 use crate::{
     error::{AppError, Result},
@@ -10,10 +11,24 @@ use crate::{
 
 pub fn routes() -> Router<AppState> {
     Router::new()
+        .route("/search", get(search_users))
         .route("/:username", get(get_public_profile))
         .route("/:username/posts", get(get_user_posts))
         .route("/me/avatar", post(upload_avatar))
         .route("/me/avatar", delete(delete_avatar))
+}
+
+#[derive(Deserialize)]
+struct SearchParams { q: Option<String>, limit: Option<i64> }
+
+async fn search_users(State(state): State<AppState>, Query(p): Query<SearchParams>) -> Result<Json<Value>> {
+    let query = p.q.unwrap_or_default();
+    if query.trim().is_empty() {
+        return Ok(Json(json!({"success": true, "data": [], "count": 0})));
+    }
+    let users = UserService::search_users(&state.db, &query, p.limit.unwrap_or(20)).await?;
+    let count = users.len();
+    Ok(Json(json!({"success": true, "data": users, "count": count})))
 }
 
 async fn get_public_profile(State(state): State<AppState>, Path(username): Path<String>) -> Result<Json<Value>> {
