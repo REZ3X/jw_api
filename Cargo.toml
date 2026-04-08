@@ -1,6 +1,6 @@
 [package]
 name = "jw_api"
-version = "0.1.5"
+version = "0.1.7"
 edition = "2021"
 description = "JogjaWaskita — Civic Engagement & Government Report Platform API"
 
@@ -52,3 +52,8 @@ thiserror = "1"
 
 # Env
 dotenvy = "0.15"
+
+[dev-dependencies]
+tokio-test = "0.4.4"
+axum-test = "16.4"
+mockall = "0.13"

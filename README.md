@@ -91,6 +91,25 @@ Server starts at `http://localhost:8000`. Verify with:
 curl http://localhost:8000/health
 ```
 
+## Testing
+
+The project includes a robust testing framework built with `axum-test` and `tokio-test`. This suite models frontend interactions and integration boundaries directly.
+
+### Running Tests
+
+```bash
+# Run unit tests (No external services needed)
+cargo test
+
+# Run all tests, including endpoint integration tests (Requires MariaDB + .env services!)
+cargo test -- --include-ignored
+
+# Run a specific HTTP integration test
+cargo test --test test_routes -- --ignored
+```
+
+> **Note**: Integration tests dynamically load variables from your `.env` file automatically to validate services like Brevo SMTP and Gemini AI. To run live email tests, make sure to set `TEST_EMAIL_RECIPIENT=` inside your `.env` file!
+
 ## API Reference
 
 ### Auth
