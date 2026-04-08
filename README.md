@@ -108,6 +108,7 @@ curl http://localhost:8000/health
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
+| GET | `/api/users/search?q=` | — | Search users by name or username |
 | GET | `/api/users/:username` | — | Public profile |
 | GET | `/api/users/:username/posts` | — | User's public posts |
 | POST | `/api/users/me/avatar` | Verified | Upload custom avatar (multipart) |
