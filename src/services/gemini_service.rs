@@ -20,6 +20,8 @@ struct SystemInstruction {
 struct GenerationConfig {
     temperature: f32,
     max_output_tokens: u32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    response_mime_type: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -106,6 +108,7 @@ impl GeminiService {
             generation_config: Some(GenerationConfig {
                 temperature,
                 max_output_tokens: max_tokens,
+                response_mime_type: None,
             }),
         };
 
@@ -149,6 +152,7 @@ impl GeminiService {
             generation_config: Some(GenerationConfig {
                 temperature,
                 max_output_tokens: 4096,
+                response_mime_type: Some("application/json".to_string()),
             }),
         };
 
