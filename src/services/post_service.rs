@@ -109,6 +109,17 @@ impl PostService {
             where_clauses.push("p.is_private = FALSE".to_string());
         }
 
+        let is_filtered = params.department.is_some()
+            || params.status.is_some()
+            || params.user_id.is_some()
+            || params.search.is_some()
+            || params.tag.is_some()
+            || params.sort.is_some();
+
+        if !is_filtered {
+            where_clauses.push("p.created_at >= DATE_SUB(NOW(), INTERVAL 48 HOUR)".to_string());
+        }
+
         if let Some(ref dept) = params.department {
             where_clauses.push("p.department = ?".to_string());
             bind_values.push(dept.clone());
@@ -140,10 +151,14 @@ impl PostService {
             where_clauses.join(" AND ")
         };
 
-        let order_by = match params.sort.as_deref() {
-            Some("most_upvoted") => "p.upvote_count DESC",
-            Some("most_discussed") => "p.comment_count DESC",
-            _ => "p.created_at DESC",
+        let order_by = if !is_filtered {
+            "RAND()".to_string()
+        } else {
+            match params.sort.as_deref() {
+                Some("most_upvoted") => "p.upvote_count DESC".to_string(),
+                Some("most_discussed") => "p.comment_count DESC".to_string(),
+                _ => "p.created_at DESC".to_string(),
+            }
         };
 
 

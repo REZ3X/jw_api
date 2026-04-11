@@ -72,6 +72,8 @@ Key variables:
 | `APP_MODE` | `internal` (dev) or `external` (prod) |
 | `APP_PORT` | Server port (default: 8000) |
 | `FRONTEND_URL` | Frontend origin for CORS + email links |
+| `MAX_IMAGE_SIZE_MB` | Maximum image upload size limit (e.g. 10) |
+| `MAX_VIDEO_SIZE_MB` | Maximum video upload size limit (e.g. 50) |
 
 Generate an encryption key:
 
@@ -138,7 +140,7 @@ cargo test --test test_routes -- --ignored
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | POST | `/api/posts` | Verified | Create post (multipart: caption + media) |
-| GET | `/api/posts` | Optional | List posts (filters: department, status, tag, search, sort) |
+| GET | `/api/posts` | Optional | List posts (filters: department, status, tag, search, sort; defaults to random within last 48 hours if unfiltered) |
 | GET | `/api/posts/me` | Verified | List own posts (includes private) |
 | GET | `/api/posts/:id` | Optional | Get single post |
 | PUT | `/api/posts/:id` | Verified | Update post (caption editable within 24h) |
