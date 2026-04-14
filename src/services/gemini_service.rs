@@ -59,13 +59,30 @@ struct ResponsePart {
 
 #[derive(Clone)]
 pub struct GeminiService {
-    api_key: String,
-    model: String,
+    api_keys: Vec<String>,
+    models: Vec<String>,
     client: Arc<reqwest::Client>,
 }
 
 impl GeminiService {
-    pub fn new(api_key: String, model: String) -> Self {
+    // Accepts a comma-separated model list (e.g. "gemini-3.1-flash-lite-preview, gemini-2.5-flash")
+    // and a comma-separated api_key list.
+    pub fn new(api_key_csv: String, model_csv: String) -> Self {
+        let api_keys: Vec<String> = api_key_csv
+            .split(',')
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .collect();
+        assert!(!api_keys.is_empty(), "At least one GEMINI_API_KEY must be configured");
+
+        let models: Vec<String> = model_csv
+            .split(',')
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .collect();
+
+        assert!(!models.is_empty(), "At least one GEMINI_MODEL must be configured");
+
         let client = reqwest::Client::builder()
             .timeout(std::time::Duration::from_secs(120))
             .pool_max_idle_per_host(5)
@@ -73,17 +90,63 @@ impl GeminiService {
             .expect("Failed to build Gemini HTTP client");
 
         Self {
-            api_key,
-            model,
+            api_keys,
+            models,
             client: Arc::new(client),
         }
     }
 
-    fn endpoint(&self) -> String {
+    fn endpoint(&self, model: &str, api_key: &str) -> String {
         format!(
             "https://generativelanguage.googleapis.com/v1beta/models/{}:generateContent?key={}",
-            self.model, self.api_key
+            model, api_key
         )
+    }
+
+    // Sends a request with automatic failover across configured models and API keys.
+    // Retryable errors (5xx, 429, 403, 400) trigger the next model/key.
+    async fn send_request(&self, body: &GeminiRequest) -> Result<GeminiResponse> {
+        let mut last_error = String::new();
+
+        for api_key in &self.api_keys {
+            for model in &self.models {
+                let response = self.client.post(&self.endpoint(model, api_key)).json(body).send().await?;
+
+                let status = response.status();
+                let text = response.text().await.unwrap_or_default();
+
+                if status.is_success() {
+                    match serde_json::from_str::<GeminiResponse>(&text) {
+                        Ok(json) => {
+                            tracing::debug!("Gemini request served by model: {} with key ...{}", model, &api_key[api_key.len().saturating_sub(4)..]);
+                            return Ok(json);
+                        }
+                        Err(e) => {
+                            let raw_preview = &text[..std::cmp::min(200, text.len())];
+                            let msg = format!("JSON parse error from {}. Raw: '{}' Error: {}", model, raw_preview, e);
+                            tracing::warn!("{}", msg);
+                            println!("  [Failover] {} (key ...{})", msg, &api_key[api_key.len().saturating_sub(4)..]);
+                            last_error = msg;
+                            continue;
+                        }
+                    }
+                }
+
+                last_error = format!("Gemini API error {} (model: {}): {}", status, model, text);
+
+                // Failover on 5xx (server error), 429 (rate limit), 403 (quota/forbidden), 400 (bad request/model not allowed)
+                if status.as_u16() >= 500 || status.as_u16() == 429 || status.as_u16() == 403 || status.as_u16() == 400 {
+                    let msg = format!("HTTP {} from {}. Body: {}", status, model, &text[..std::cmp::min(150, text.len())]);
+                    tracing::warn!("{}", msg);
+                    println!("  [Failover] {} (key ...{})", msg, &api_key[api_key.len().saturating_sub(4)..]);
+                    continue;
+                }
+
+                anyhow::bail!("{}", last_error);
+            }
+        }
+
+        anyhow::bail!("All models and API keys exhausted. Last error: {}", last_error)
     }
 
     pub async fn generate_text(&self, prompt: &str) -> Result<String> {
@@ -112,15 +175,7 @@ impl GeminiService {
             }),
         };
 
-        let response = self.client.post(&self.endpoint()).json(&body).send().await?;
-
-        if !response.status().is_success() {
-            let status = response.status();
-            let text = response.text().await.unwrap_or_default();
-            anyhow::bail!("Gemini API error {}: {}", status, text);
-        }
-
-        let resp: GeminiResponse = response.json().await?;
+        let resp = self.send_request(&body).await?;
         Self::extract_text(&resp)
     }
 
@@ -156,15 +211,7 @@ impl GeminiService {
             }),
         };
 
-        let response = self.client.post(&self.endpoint()).json(&body).send().await?;
-
-        if !response.status().is_success() {
-            let status = response.status();
-            let text = response.text().await.unwrap_or_default();
-            anyhow::bail!("Gemini API error {}: {}", status, text);
-        }
-
-        let resp: GeminiResponse = response.json().await?;
+        let resp = self.send_request(&body).await?;
         Self::extract_text(&resp)
     }
 

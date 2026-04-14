@@ -66,7 +66,8 @@ Key variables:
 | `JWT_SECRET` | Secret for signing JWT tokens |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth credentials |
 | `GOOGLE_REDIRECT_URI` | OAuth callback URL |
-| `GEMINI_API_KEY` | Google Gemini API key |
+| `GEMINI_API_KEY` | Comma-separated API keys with failover (e.g. `"key1, key2"`) |
+| `GEMINI_MODEL` | Comma-separated model list with failover (e.g. `"gemini-3.1-flash-lite-preview, gemini-2.5-flash"`) |
 | `ENCRYPTION_MASTER_KEY` | 64-char hex string (32 bytes) for AES-256 |
 | `BREVO_SMTP_*` | Brevo SMTP credentials |
 | `APP_MODE` | `internal` (dev) or `external` (prod) |
@@ -95,22 +96,46 @@ curl http://localhost:8000/health
 
 ## Testing
 
-The project includes a robust testing framework built with `axum-test` and `tokio-test`. This suite models frontend interactions and integration boundaries directly.
+The project includes a performance-oriented testing framework built with `axum-test` and `tokio-test`. Tests enforce hard timing budgets (SLAs) and produce parseable audit output for regression tracking.
 
 ### Running Tests
 
 ```bash
-# Run unit tests (No external services needed)
+# Unit tests (no external services needed)
 cargo test
 
-# Run all tests, including endpoint integration tests (Requires MariaDB + .env services!)
+# Full suite including DB and API integration tests
 cargo test -- --include-ignored
 
-# Run a specific HTTP integration test
-cargo test --test test_routes -- --ignored
+# Run a specific test file
+cargo test --test test_perf_crypto
+cargo test --test test_perf_routes -- --ignored
+
+# Run a single test by name
+cargo test perf_encrypt_decrypt_throughput
+cargo test vote_toggle_and_switch -- --ignored
 ```
 
-> **Note**: Integration tests dynamically load variables from your `.env` file automatically to validate services like Brevo SMTP and Gemini AI. To run live email tests, make sure to set `TEST_EMAIL_RECIPIENT=` inside your `.env` file!
+> **Note**: Integration tests load variables from `.env` automatically. To run live email tests, set `TEST_EMAIL_RECIPIENT=` in `.env`.
+
+### Test Suite
+
+| File | Requires | Coverage |
+|------|----------|----------|
+| `test_perf_crypto` | — | Encrypt/decrypt throughput (500x), concurrency (50 tasks), 1MB payload, malformed input, salt uniqueness |
+| `test_perf_media` | — | Write throughput (20 files), boundary sizes, type detection, concurrent writes, delete verification |
+| `test_perf_auth` | `.env` | JWT generation (100x), claims validation, token uniqueness (500x), role detection, avatar fallback |
+| `test_errors_models` | — | All AppError → HTTP status mappings, response body shape, Display trait |
+| `test_config_crypto` | — | Config parsing, crypto init, encrypt/decrypt roundtrip, wrong salt rejection |
+| `test_perf_routes` | MariaDB | Health endpoint latency (p95), throughput (50 req), auth guard on 10 protected routes, 404 handling |
+| `test_perf_database` | MariaDB | Connection pool latency (p95), migration idempotency, concurrent queries (20x), write/read consistency |
+| `test_services` | MariaDB | Post create/delete lifecycle, comment count tracking, vote toggle/switch, bulk creation (10x), file upload limits |
+| `test_perf_gemini` | Gemini API | Response time budget, classification consistency (4/5), title invariants, concurrent calls, edge cases |
+| `test_gemini` | Gemini API | Live generation, department classification, title generation, agent tool calling format |
+| `test_routes` | MariaDB | Health endpoint structure, unauthorized route rejection |
+| `test_email` | Brevo SMTP | Live verification email send |
+| `test_auth_chat` | MariaDB | JWT-protected chat endpoint rejection |
+| `test_database` | MariaDB | Connection pool, migration runner |
 
 ## API Reference
 
