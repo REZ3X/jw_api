@@ -48,7 +48,7 @@ pub async fn timed<T, F: Future<Output = T>>(label: &str, fut: F) -> (Duration, 
     let start = Instant::now();
     let result = fut.await;
     let elapsed = start.elapsed();
-    println!("⏱ {}: {}ms", label, elapsed.as_millis());
+    println!(" {}: {}ms", label, elapsed.as_millis());
     (elapsed, result)
 }
 
@@ -57,14 +57,14 @@ pub fn assert_under(label: &str, actual: Duration, budget_ms: u64) {
     let budget = Duration::from_millis(budget_ms);
     if actual > budget {
         panic!(
-            "⏱ [FAIL] {} took {}ms, budget was {}ms",
+            " [FAIL] {} took {}ms, budget was {}ms",
             label,
             actual.as_millis(),
             budget_ms
         );
     }
     println!(
-        "⏱ [PASS] {}: {}ms (budget: {}ms) ✓",
+        " [PASS] {}: {}ms (budget: {}ms) ✓",
         label,
         actual.as_millis(),
         budget_ms

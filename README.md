@@ -66,7 +66,7 @@ Key variables:
 | `JWT_SECRET` | Secret for signing JWT tokens |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth credentials |
 | `GOOGLE_REDIRECT_URI` | OAuth callback URL |
-| `GEMINI_API_KEY` | Comma-separated API keys with failover (e.g. `"key1, key2"`) |
+| `GEMINI_API_KEY` | Comma-separated API keys with failover (e.g. `"key1, key2, key3"`) |
 | `GEMINI_MODEL` | Comma-separated model list with failover (e.g. `"gemini-3.1-flash-lite-preview, gemini-2.5-flash"`) |
 | `ENCRYPTION_MASTER_KEY` | 64-char hex string (32 bytes) for AES-256 |
 | `BREVO_SMTP_*` | Brevo SMTP credentials |

@@ -1,6 +1,6 @@
-use std::time::Instant;
 use axum::http::StatusCode;
 use jw_api::db;
+use std::time::Instant;
 
 mod common;
 
@@ -20,8 +20,11 @@ async fn perf_health_latency_p95() {
     durations.sort();
 
     let p95 = durations[(durations.len() as f64 * 0.95) as usize];
-    println!("⏱ health_p50: {}ms", durations[durations.len() / 2].as_millis());
-    println!("⏱ health_p95: {}ms", p95.as_millis());
+    println!(
+        " health_p50: {}ms",
+        durations[durations.len() / 2].as_millis()
+    );
+    println!(" health_p95: {}ms", p95.as_millis());
     common::assert_under("health_p95", p95, 50);
 }
 
@@ -71,10 +74,15 @@ async fn auth_guard_rejects_all_protected_routes() {
             response.status_code(),
             StatusCode::UNAUTHORIZED,
             "{} {} should require auth, got {}",
-            method, path, response.status_code()
+            method,
+            path,
+            response.status_code()
         );
     }
-    println!("⏱ [PASS] auth_guard: all {} protected routes correctly reject unauthenticated requests ✓", protected_routes.len());
+    println!(
+        " [PASS] auth_guard: all {} protected routes correctly reject unauthenticated requests ✓",
+        protected_routes.len()
+    );
 }
 
 #[tokio::test]

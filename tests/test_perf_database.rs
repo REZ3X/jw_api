@@ -18,8 +18,8 @@ async fn perf_connection_pool_latency() {
     durations.sort();
 
     let p95 = durations[(durations.len() as f64 * 0.95) as usize];
-    println!("⏱ pool_acquire_p50: {}ms", durations[durations.len() / 2].as_millis());
-    println!("⏱ pool_acquire_p95: {}ms", p95.as_millis());
+    println!(" pool_acquire_p50: {}ms", durations[durations.len() / 2].as_millis());
+    println!(" pool_acquire_p95: {}ms", p95.as_millis());
     common::assert_under("pool_acquire_p95", p95, 50);
 }
 

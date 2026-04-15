@@ -1,6 +1,6 @@
 [package]
 name = "jw_api"
-version = "0.3.0-a"
+version = "0.3.0-b"
 edition = "2021"
 description = "JogjaWaskita — Civic Engagement & Government Report Platform API"
 

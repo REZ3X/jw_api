@@ -1,5 +1,5 @@
-use std::time::Instant;
 use jw_api::services::GeminiService;
+use std::time::Instant;
 
 mod common;
 
@@ -27,7 +27,7 @@ async fn perf_generate_text_response_time() {
         let elapsed = start.elapsed();
         assert!(result.is_ok(), "Call {} failed: {:?}", i, result.err());
         durations.push(elapsed);
-        println!("⏱ generate_text attempt {}: {}ms", i, elapsed.as_millis());
+        println!(" generate_text attempt {}: {}ms", i, elapsed.as_millis());
     }
 
     durations.sort();
@@ -42,9 +42,18 @@ async fn perf_classification_consistency() {
     let service = GeminiService::new(api_key, model);
 
     let test_cases = vec![
-        ("Trash is piling up near the river and causing pollution", "environment_department"),
-        ("There is a fire in the building on Jalan Malioboro", "fire_department"),
-        ("Criminal activity and theft reported near the market", "police_department"),
+        (
+            "Trash is piling up near the river and causing pollution",
+            "environment_department",
+        ),
+        (
+            "There is a fire in the building on Jalan Malioboro",
+            "fire_department",
+        ),
+        (
+            "Criminal activity and theft reported near the market",
+            "police_department",
+        ),
     ];
 
     for (prompt, expected) in &test_cases {
@@ -58,13 +67,19 @@ async fn perf_classification_consistency() {
             }
         }
         println!(
-            "⏱ classify '{}...' → {}/{} correct for {}",
-            &prompt[..40.min(prompt.len())], correct, runs, expected
+            " classify '{}...' → {}/{} correct for {}",
+            &prompt[..40.min(prompt.len())],
+            correct,
+            runs,
+            expected
         );
         assert!(
             correct >= 4,
             "Classification for '{}' only matched {}/{} times (expected {})",
-            prompt, correct, runs, expected
+            prompt,
+            correct,
+            runs,
+            expected
         );
     }
 }
@@ -88,11 +103,27 @@ async fn perf_title_generation_invariants() {
         let word_count = title.split_whitespace().count();
         let char_count = title.chars().count();
 
-        println!("⏱ title for '{}...' → '{}' ({} words, {} chars)", &prompt[..30], title, word_count, char_count);
+        println!(
+            " title for '{}...' → '{}' ({} words, {} chars)",
+            &prompt[..30],
+            title,
+            word_count,
+            char_count
+        );
 
         assert!(!title.is_empty(), "Title should not be empty");
-        assert!(word_count <= 7, "Title '{}' exceeds 7 words (got {})", title, word_count);
-        assert!(char_count <= 60, "Title '{}' exceeds 60 chars (got {})", title, char_count);
+        assert!(
+            word_count <= 7,
+            "Title '{}' exceeds 7 words (got {})",
+            title,
+            word_count
+        );
+        assert!(
+            char_count <= 60,
+            "Title '{}' exceeds 60 chars (got {})",
+            title,
+            char_count
+        );
     }
 }
 
@@ -103,8 +134,11 @@ async fn perf_concurrent_classification() {
     let service = GeminiService::new(api_key, model);
 
     let valid_departments = vec![
-        "city_major_gov", "fire_department", "health_department",
-        "environment_department", "police_department",
+        "city_major_gov",
+        "fire_department",
+        "health_department",
+        "environment_department",
+        "police_department",
     ];
 
     let prompts = vec![
@@ -124,11 +158,16 @@ async fn perf_concurrent_classification() {
 
     for h in handles {
         let result = h.await.unwrap();
-        assert!(result.is_ok(), "Concurrent classification failed: {:?}", result.err());
+        assert!(
+            result.is_ok(),
+            "Concurrent classification failed: {:?}",
+            result.err()
+        );
         let dept = result.unwrap();
         assert!(
             valid_departments.contains(&dept.as_str()),
-            "Got invalid department: {}", dept
+            "Got invalid department: {}",
+            dept
         );
     }
     let elapsed = start.elapsed();
@@ -144,8 +183,8 @@ async fn gemini_empty_prompt_handled() {
     let result = service.generate_text("").await;
     // Should either succeed with some response or return a clean error
     match result {
-        Ok(text) => println!("⏱ empty prompt returned: '{}'", &text[..50.min(text.len())]),
-        Err(e) => println!("⏱ empty prompt error (acceptable): {}", e),
+        Ok(text) => println!(" empty prompt returned: '{}'", &text[..50.min(text.len())]),
+        Err(e) => println!(" empty prompt error (acceptable): {}", e),
     }
 }
 
@@ -161,8 +200,16 @@ async fn gemini_long_prompt_handled() {
     let result = service.generate_text(&long_prompt).await;
     let elapsed = start.elapsed();
 
-    assert!(result.is_ok(), "Long prompt should not panic: {:?}", result.err());
-    println!("⏱ long_prompt ({}chars): {}ms", long_prompt.len(), elapsed.as_millis());
+    assert!(
+        result.is_ok(),
+        "Long prompt should not panic: {:?}",
+        result.err()
+    );
+    println!(
+        " long_prompt ({}chars): {}ms",
+        long_prompt.len(),
+        elapsed.as_millis()
+    );
 }
 
 #[tokio::test]
@@ -190,15 +237,23 @@ RESPONSE FORMAT (when calling tools):
     let prompts = vec![
         ("Show me trending platform tags", "GET_TRENDING_TAGS"),
         ("What are my unresponded posts?", "GET_MY_UNRESPONDED_POSTS"),
-        ("I want to draft a report about a fire on 5th Ave", "CREATE_POST_DRAFT"),
+        (
+            "I want to draft a report about a fire on 5th Ave",
+            "CREATE_POST_DRAFT",
+        ),
     ];
 
     for (user_msg, expected_tool) in prompts {
-        let resp = service.generate_chat_response(system_prompt, &[], user_msg, 0.0).await.unwrap();
-        println!("⏱ tool_call '{}' → contains '{}'", user_msg, expected_tool);
+        let resp = service
+            .generate_chat_response(system_prompt, &[], user_msg, 0.0)
+            .await
+            .unwrap();
+        println!(" tool_call '{}' → contains '{}'", user_msg, expected_tool);
         assert!(
             resp.contains(expected_tool),
-            "Response didn't trigger expected tool {}. Raw: {}", expected_tool, resp
+            "Response didn't trigger expected tool {}. Raw: {}",
+            expected_tool,
+            resp
         );
     }
 }
