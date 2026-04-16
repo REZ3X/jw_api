@@ -35,7 +35,7 @@ impl AgentService {
         if history.last().map(|(r, _)| r.as_str()) == Some("user") { history.pop(); }
 
         let system_prompt = Self::build_system_prompt(user_name, user_role);
-        let ai_response = gemini.generate_chat_response(&system_prompt, &history, &req.message, 1.0).await
+        let ai_response = gemini.generate_chat_response(&system_prompt, &history, &req.message, req.images.clone(), 1.0).await
             .map_err(|e| AppError::InternalError(e.into()))?;
 
         let (response_text, tool_calls, tool_results) = Self::parse_and_execute_tools(pool, user_id, user_role, &ai_response).await?;
@@ -366,7 +366,8 @@ RESPONSE FORMAT (when calling tools):
 {{"response": "Penjelasan singkat dalam bahasa Indonesia", "tool_calls": [{{"tool_name": "TOOL_NAME", "parameters": {{}}}}]}}
 
 When not calling tools, respond in plain text in indonesian with slight Jogja nuances.
-Be concise but incredibly polite and action-oriented."#,
+Be concise but incredibly polite and action-oriented.
+If the user uploads images of civic issues, encourage them to submit a report and consider calling CREATE_POST_DRAFT. If the images are unrelated to a report or no tool is called, give a friendly default response explaining what you see in the images."#,
             name = user_name,
             role = role_label,
             shared = shared_tools,

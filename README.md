@@ -218,7 +218,7 @@ Request body: `{ "vote_type": "up" | "down" }`
 
 Chat types:
 - **general** — Conversational civic engagement assistant
-- **agentic** — Role-aware tool-calling mode with access to platform data
+- **agentic** — Role-aware tool-calling mode with access to platform data and multimodal image analysis capabilities
 
 All chat messages are encrypted at rest with per-user derived keys (AES-256-GCM + HKDF).
 

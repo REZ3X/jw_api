@@ -99,7 +99,7 @@ RESPONSE FORMAT (when calling tools):
     ];
 
     for (user_msg, expected_tool) in prompts {
-        let resp = service.generate_chat_response(system_prompt, &[], user_msg, 0.0).await.unwrap();
+        let resp = service.generate_chat_response(system_prompt, &[], user_msg, None, 0.0).await.unwrap();
         println!("  └─ Prompt: '{}' -> Triggered Tool string payload containing: {}", user_msg, expected_tool);
         assert!(
             resp.contains(expected_tool), 

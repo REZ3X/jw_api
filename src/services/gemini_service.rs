@@ -13,7 +13,7 @@ struct GeminiRequest {
 
 #[derive(Debug, Serialize)]
 struct SystemInstruction {
-    parts: Vec<TextPart>,
+    parts: Vec<Part>,
 }
 
 #[derive(Debug, Serialize)]
@@ -27,12 +27,20 @@ struct GenerationConfig {
 #[derive(Debug, Serialize)]
 struct Content {
     role: String,
-    parts: Vec<TextPart>,
+    parts: Vec<Part>,
 }
 
 #[derive(Debug, Serialize)]
-struct TextPart {
-    text: String,
+#[serde(untagged)]
+enum Part {
+    Text { text: String },
+    InlineData { inline_data: InlineData },
+}
+
+#[derive(Debug, Serialize)]
+struct InlineData {
+    mime_type: String,
+    data: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -163,10 +171,10 @@ impl GeminiService {
         let body = GeminiRequest {
             contents: vec![Content {
                 role: "user".into(),
-                parts: vec![TextPart { text: prompt.into() }],
+                parts: vec![Part::Text { text: prompt.into() }],
             }],
             system_instruction: system.map(|s| SystemInstruction {
-                parts: vec![TextPart { text: s.into() }],
+                parts: vec![Part::Text { text: s.into() }],
             }),
             generation_config: Some(GenerationConfig {
                 temperature,
@@ -184,25 +192,44 @@ impl GeminiService {
         system_prompt: &str,
         history: &[(String, String)],
         user_message: &str,
+        images: Option<Vec<String>>,
         temperature: f32,
     ) -> Result<String> {
         let mut contents: Vec<Content> = history
             .iter()
             .map(|(role, content)| Content {
                 role: role.clone(),
-                parts: vec![TextPart { text: content.clone() }],
+                parts: vec![Part::Text { text: content.clone() }],
             })
             .collect();
 
+        let mut user_parts = vec![Part::Text { text: user_message.into() }];
+        if let Some(imgs) = images {
+            for img in imgs {
+                if let Some(data) = img.strip_prefix("data:image/") {
+                    if let Some(idx) = data.find(";base64,") {
+                        let mime_ext = &data[..idx];
+                        let b64 = &data[idx + 8..];
+                        user_parts.push(Part::InlineData {
+                            inline_data: InlineData {
+                                mime_type: format!("image/{}", mime_ext),
+                                data: b64.to_string(),
+                            }
+                        });
+                    }
+                }
+            }
+        }
+
         contents.push(Content {
             role: "user".into(),
-            parts: vec![TextPart { text: user_message.into() }],
+            parts: user_parts,
         });
 
         let body = GeminiRequest {
             contents,
             system_instruction: Some(SystemInstruction {
-                parts: vec![TextPart { text: system_prompt.into() }],
+                parts: vec![Part::Text { text: system_prompt.into() }],
             }),
             generation_config: Some(GenerationConfig {
                 temperature,

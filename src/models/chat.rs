@@ -80,6 +80,7 @@ pub struct UpdateChatRequest {
 #[derive(Debug, Deserialize)]
 pub struct SendMessageRequest {
     pub message: String,
+    pub images: Option<Vec<String>>,
 }
 
 

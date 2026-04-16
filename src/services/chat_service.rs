@@ -82,7 +82,7 @@ impl ChatService {
         if !history.is_empty() && history.last().map(|(r, _)| r.as_str()) == Some("user") { history.pop(); }
 
         let system_prompt = Self::build_system_prompt(user_name);
-        let ai_response = gemini.generate_chat_response(&system_prompt, &history, &req.message, 0.8).await
+        let ai_response = gemini.generate_chat_response(&system_prompt, &history, &req.message, req.images.clone(), 0.8).await
             .map_err(|e| AppError::InternalError(e.into()))?;
 
         let assistant_msg = Self::save_message(pool, crypto, chat_id, user_id, "assistant", &ai_response, None, None, salt).await?;
