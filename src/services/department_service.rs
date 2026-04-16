@@ -30,10 +30,10 @@ impl DepartmentService {
 
         Ok(serde_json::json!({
             "department": department,
-            "total_reports": total.0,
-            "pending": pending.0,
-            "in_progress": in_progress.0,
-            "closed": closed.0,
+            "total_posts": total.0,
+            "pending_posts": pending.0,
+            "in_progress_posts": in_progress.0,
+            "closed_posts": closed.0,
             "resolution_rate": format!("{:.1}%", resolution_rate),
         }))
     }
