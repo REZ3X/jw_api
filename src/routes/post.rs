@@ -112,5 +112,5 @@ async fn delete_post(State(state): State<AppState>, auth: VerifiedUser, Path(id)
 
 async fn classify_department(State(state): State<AppState>, _auth: VerifiedUser, Json(req): Json<ClassifyDepartmentRequest>) -> Result<Json<Value>> {
     let dept = state.gemini.classify_department(&req.caption).await.map_err(|e| AppError::InternalError(e.into()))?;
-    Ok(Json(json!({"success": true, "department": dept})))
+    Ok(Json(json!({"success": true, "data": {"department": dept}})))
 }
