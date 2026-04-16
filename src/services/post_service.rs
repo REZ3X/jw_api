@@ -136,8 +136,18 @@ impl PostService {
         }
 
         if let Some(ref search) = params.search {
-            where_clauses.push("p.caption LIKE ?".to_string());
-            bind_values.push(format!("%{}%", search));
+            where_clauses.push("(
+                p.caption LIKE ? 
+                OR EXISTS (SELECT 1 FROM post_tags pt WHERE pt.post_id = p.id AND pt.tag LIKE ?)
+                OR p.location LIKE ?
+                OR EXISTS (SELECT 1 FROM users u WHERE u.id = p.user_id AND (u.name LIKE ? OR u.username LIKE ?))
+            )".to_string());
+            let pattern = format!("%{}%", search);
+            bind_values.push(pattern.clone());
+            bind_values.push(pattern.clone());
+            bind_values.push(pattern.clone());
+            bind_values.push(pattern.clone());
+            bind_values.push(pattern);
         }
 
         if let Some(ref tag) = params.tag {

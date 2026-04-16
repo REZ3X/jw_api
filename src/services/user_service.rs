@@ -22,8 +22,9 @@ impl UserService {
     pub async fn search_users(pool: &MySqlPool, query: &str, limit: i64) -> Result<Vec<PublicUserResponse>> {
         let pattern = format!("%{}%", query);
         let rows: Vec<UserRow> = sqlx::query_as(
-            "SELECT * FROM users WHERE (name LIKE ? OR username LIKE ?) ORDER BY name ASC LIMIT ?"
+            "SELECT * FROM users WHERE (name LIKE ? OR username LIKE ? OR bio LIKE ?) ORDER BY name ASC LIMIT ?"
         )
+        .bind(&pattern)
         .bind(&pattern)
         .bind(&pattern)
         .bind(limit)
